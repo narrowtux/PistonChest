@@ -11,16 +11,26 @@ public class PCServerListener extends ServerListener {
 	@Override
 	public void onPluginEnable(PluginEnableEvent event){
 		Plugin plugin = event.getPlugin();
-		if(plugin.getDescription().getName().equals("Lockette")){
-			PCMain.lockette = true;
+		String name = plugin.getDescription().getName();
+		if(name.equals("Lockette")||name.equals("LWC")){
+			if(name.equals("Lockette")){
+				PCMain.lockette = true;
+			}
+			if(name.equals("LWC")){
+				PCMain.lwc = true;
+			}
 			PCMain.log.log(Level.INFO, "[PistonChest] "+plugin.getDescription().getFullName()+" found!");
 		}
 	}
 	
 	public void onPluginDisable(PluginDisableEvent event){
 		Plugin plugin = event.getPlugin();
-		if(plugin.getDescription().getName().equals("Lockette")){
+		String name = plugin.getDescription().getName();
+		if(name.equals("Lockette")){
 			PCMain.lockette = false;
+		}
+		if(name.equals("LWC")){
+			PCMain.lwc = false;
 		}
 	}
 }

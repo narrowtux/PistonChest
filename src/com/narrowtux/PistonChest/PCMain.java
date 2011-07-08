@@ -14,12 +14,16 @@ import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.yi.acru.bukkit.Lockette.Lockette;
 
+import com.griefcraft.lwc.LWC;
+import com.griefcraft.model.Protection;
+
 public class PCMain extends JavaPlugin {
 	public static Logger log = Bukkit.getServer().getLogger();
 	public static PCMain instance;
 	private PCBlockListener blockListener = new PCBlockListener();
 	private PCServerListener serverListener = new PCServerListener();
 	public static boolean lockette = false;
+	public static boolean lwc = false;
 	
 	@Override
 	public void onDisable() {
@@ -30,14 +34,21 @@ public class PCMain extends JavaPlugin {
 	public void onEnable() {
 		instance = this;
 		registerEvents();
-		Plugin plugin = getServer().getPluginManager().getPlugin("Lockette");
-		if(plugin!=null)
-		{
-			serverListener.onPluginEnable(new PluginEnableEvent(plugin));
-		}
+		fakePluginEnables();
 		sendDescription("enabled");
 	}
 	
+	private void fakePluginEnables() {
+		String plugins[] = {"Lockette", "LWC"};
+		for(String name:plugins){
+			Plugin plugin = getServer().getPluginManager().getPlugin(name);
+			if(plugin!=null)
+			{
+				serverListener.onPluginEnable(new PluginEnableEvent(plugin));
+			}
+		}
+	}
+
 	private void registerEvents() {
 		PluginManager pm = getServer().getPluginManager();
 		pm.registerEvent(Type.REDSTONE_CHANGE, blockListener, Priority.Normal, this);
@@ -58,11 +69,15 @@ public class PCMain extends JavaPlugin {
 	}
 	
 	public static boolean isChestPublic(Block chest){
+		boolean flag = true;
 		if(lockette){
-			return !Lockette.isProtected(chest);
-		} else {
-			return true;
+			flag = !Lockette.isProtected(chest)&&flag;
 		}
+		if(lwc){
+			Protection prot = LWC.getInstance().findProtection(chest);
+			flag = prot==null&&flag;
+		}
+		return flag;
 	}
 
 }
