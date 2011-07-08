@@ -12,6 +12,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public class PCMain extends JavaPlugin {
 	public static Logger log = Bukkit.getServer().getLogger();
+	public static PCMain instance;
 	private PCBlockListener blockListener = new PCBlockListener();
 	@Override
 	public void onDisable() {
@@ -20,6 +21,7 @@ public class PCMain extends JavaPlugin {
 
 	@Override
 	public void onEnable() {
+		instance = this;
 		sendDescription("enabled");
 		registerEvents();
 	}
