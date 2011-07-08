@@ -24,6 +24,9 @@ public class PCBlockListener extends BlockListener {
 		for(Block piston:pistons){
 			if(piston.getType().equals(Material.PISTON_BASE)){
 				Block chest = getChestInLine(piston);
+				if(!PCMain.isChestPublic(chest)){
+					continue;
+				}
 				if(chest!=null&&!blockBeforeChest.equals(piston)){
 					ItemStack stack = new ItemStack(blockBeforeChest.getType(), 1, blockBeforeChest.getData());
 					Inventory inv = ((ContainerBlock)chest.getState()).getInventory();
@@ -42,6 +45,9 @@ public class PCBlockListener extends BlockListener {
 				BlockFace face = getPistonFace(piston.getData());
 				Block chest = piston.getFace(face).getFace(face);
 				if(isAcceptedType(chest.getType())){
+					if(!PCMain.isChestPublic(chest)){
+						continue;
+					}
 					Inventory inv = ((ContainerBlock)chest.getState()).getInventory();
 					ItemStack stack = null;
 					if(chest.getType().equals(Material.CHEST)||chest.getType().equals(Material.DISPENSER)){
