@@ -158,7 +158,14 @@ public class PCBlockListener extends BlockListener {
 				||type.equals(Material.LADDER)
 				||type.equals(Material.WOODEN_DOOR)
 				||type.equals(Material.IRON_DOOR_BLOCK)
-				||type.equals(Material.TORCH)){
+				||type.equals(Material.TORCH)
+				||type.equals(Material.WATER)
+				||type.equals(Material.LAVA)
+				||type.equals(Material.STATIONARY_LAVA)
+				||type.equals(Material.STATIONARY_WATER)
+				||type.equals(Material.FIRE)
+				||type.equals(Material.PISTON_MOVING_PIECE)
+				||type.equals(Material.PISTON_EXTENSION)){
 			return true;
 		}
 		return false;

@@ -1,5 +1,12 @@
 package com.narrowtux.PistonChest;
 
+import java.io.BufferedOutputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,6 +31,7 @@ public class PCMain extends JavaPlugin {
 	private PCServerListener serverListener = new PCServerListener();
 	public static boolean lockette = false;
 	public static boolean lwc = false;
+	public Configuration config;
 	
 	@Override
 	public void onDisable() {
@@ -32,6 +40,10 @@ public class PCMain extends JavaPlugin {
 
 	@Override
 	public void onEnable() {
+		//This has to be done first!
+		checkForLibs();
+		//Init after that!
+		config = new Configuration();
 		instance = this;
 		registerEvents();
 		fakePluginEnables();
@@ -69,6 +81,9 @@ public class PCMain extends JavaPlugin {
 	}
 	
 	public static boolean isChestPublic(Block chest){
+		if(!instance.config.hasChestProtection()){
+			return true;
+		}
 		boolean flag = true;
 		if(lockette){
 			flag = !Lockette.isProtected(chest)&&flag;
@@ -78,6 +93,47 @@ public class PCMain extends JavaPlugin {
 			flag = prot==null&&flag;
 		}
 		return flag;
+	}
+	
+	private void checkForLibs() {
+		PluginManager pm = getServer().getPluginManager();
+		if(pm.getPlugin("NarrowtuxLib")==null){
+			try{
+				File toPut = new File("plugins/NarrowtuxLib.jar");
+				download(getServer().getLogger(), new URL("http://tetragaming.com/narrowtux/plugins/NarrowtuxLib.jar"), toPut);
+				pm.loadPlugin(toPut);
+				pm.enablePlugin(pm.getPlugin("NarrowtuxLib"));
+			} catch (Exception exception){
+				log.severe("[Showcase] could not load NarrowtuxLib, try again or install it manually.");
+				pm.disablePlugin(this);
+			}
+		}
+	}
+	
+	public static void download(Logger log, URL url, File file) throws IOException {
+	    if (!file.getParentFile().exists())
+	        file.getParentFile().mkdir();
+	    if (file.exists())
+	        file.delete();
+	    file.createNewFile();
+	    final int size = url.openConnection().getContentLength();
+	    log.info("Downloading " + file.getName() + " (" + size / 1024 + "kb) ...");
+	    final InputStream in = url.openStream();
+	    final OutputStream out = new BufferedOutputStream(new FileOutputStream(file));
+	    final byte[] buffer = new byte[1024];
+	    int len, downloaded = 0, msgs = 0;
+	    final long start = System.currentTimeMillis();
+	    while ((len = in.read(buffer)) >= 0) {
+	        out.write(buffer, 0, len);
+	        downloaded += len;
+	        if ((int)((System.currentTimeMillis() - start) / 500) > msgs) {
+	            log.info((int)((double)downloaded / (double)size * 100d) + "%");
+	            msgs++;
+	        }
+	    }
+	    in.close();
+	    out.close();
+	    log.info("Download finished");
 	}
 
 }
