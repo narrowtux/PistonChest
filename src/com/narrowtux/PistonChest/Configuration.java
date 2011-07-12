@@ -15,7 +15,7 @@ public class Configuration {
 	}
 	private void load() {
 		protectChests = reader.getBoolean("protectchests", true);
-		useFirstItem = reader.getBoolean("usefirstitem", true);
+		//useFirstItem = reader.getBoolean("usefirstitem", true);
 	}
 	
 	public boolean hasChestProtection(){

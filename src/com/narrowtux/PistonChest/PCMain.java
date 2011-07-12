@@ -42,9 +42,13 @@ public class PCMain extends JavaPlugin {
 	public void onEnable() {
 		//This has to be done first!
 		checkForLibs();
+		instance = this;
+		File data = getDataFolder();
+		if(!data.exists()){
+			data.mkdir();
+		}
 		//Init after that!
 		config = new Configuration();
-		instance = this;
 		registerEvents();
 		fakePluginEnables();
 		sendDescription("enabled");
