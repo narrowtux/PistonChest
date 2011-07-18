@@ -5,14 +5,22 @@ import java.util.HashMap;
 import java.util.List;
 
 import org.bukkit.Bukkit;
+import org.bukkit.Location;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.ContainerBlock;
+import org.bukkit.entity.Boat;
+import org.bukkit.entity.Item;
+import org.bukkit.entity.Minecart;
+import org.bukkit.entity.PoweredMinecart;
+import org.bukkit.entity.StorageMinecart;
 import org.bukkit.event.block.BlockListener;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.util.Vector;
 
 public class PCBlockListener extends BlockListener {
 
@@ -51,7 +59,7 @@ public class PCBlockListener extends BlockListener {
 					Inventory inv = ((ContainerBlock)chest.getState()).getInventory();
 					ItemStack stack = null;
 					if(chest.getType().equals(Material.CHEST)||chest.getType().equals(Material.DISPENSER)){
-						stack = getFirstBlock(inv);
+						stack = getFirstItem(inv);
 					}
 					if(isFurnace(chest.getType())){
 						invSlot = 2;
@@ -64,20 +72,30 @@ public class PCBlockListener extends BlockListener {
 						continue;
 					}
 					if(stack.getTypeId()!=0&&stack.getAmount()>0){
-						int amount = stack.getAmount();
-						BlockCreator creator = new BlockCreator(piston.getFace(face), stack.clone());
-						amount--;
-						stack.setAmount(amount);
-						if(amount<=0){
-							stack = null;
+						Location pos = piston.getFace(face).getLocation();
+						ItemStack toPull = stack.clone();
+						toPull.setAmount(1);
+						if(pullItem(toPull, pos, face)){
+							stack.setAmount(stack.getAmount()-1);
+							if(stack.getAmount()==0){
+								inv.setItem(invSlot, null);
+							}
 						}
-						inv.setItem(invSlot, stack);
-						Bukkit.getServer().getScheduler().scheduleSyncDelayedTask(PCMain.instance, creator, 2);
 						break;
 					}
 				}
 			}
 		}
+	}
+
+	public ItemStack getFirstItem(Inventory inv) {
+		for(invSlot = 0; invSlot<inv.getSize();invSlot++){
+			ItemStack stack = inv.getItem(invSlot);
+			if(stack.getAmount()>0){
+				return stack;
+			}
+		}
+		return null;
 	}
 
 	public List<Block> getTriggeredPistons(BlockRedstoneEvent event){
@@ -244,5 +262,58 @@ public class PCBlockListener extends BlockListener {
 	
 	public boolean isPistonExtended(byte data){
 		return (data&0x8)>0;
+	}
+	
+	public boolean pullItem(ItemStack item, Location pos, BlockFace face){
+		pos.add(0.5, 0.5, 0.5);
+		Configuration config = PCMain.instance.config;
+		if(item.getType().isBlock()&&config.buildsBlocks()){
+			Block toBuild = pos.getBlock();
+			BlockCreator creator = new BlockCreator(toBuild, item);
+			Bukkit.getServer().getScheduler().scheduleAsyncDelayedTask(PCMain.instance, creator, 2);
+			return true;
+		}
+		//Check if Minecart or Boat
+		if(isItemVehicle(item.getType())&&config.spawnsVehicles()){
+			spawnVehicle(item.getType(), pos);
+			return true;
+		}
+		if(config.dropsItems()){
+			World w = pos.getWorld();
+			Item drop = w.dropItem(pos, item);
+			Vector v = new Vector(face.getModX(), face.getModY(), face.getModZ());
+			v = v.multiply(-0.05);
+			drop.setVelocity(v);
+			return true;
+		}
+		return false;
+	}
+	
+	public void spawnVehicle(Material type, Location pos) {
+		World w = pos.getWorld();
+		switch(type){
+		case MINECART:
+			w.spawn(pos, Minecart.class);
+			break;
+		case BOAT:
+			w.spawn(pos, Boat.class);
+			break;
+		case STORAGE_MINECART:
+			w.spawn(pos, StorageMinecart.class);
+			break;
+		case POWERED_MINECART:
+			w.spawn(pos, PoweredMinecart.class);
+			break;
+		}
+	}
+
+	public boolean isItemVehicle(Material item){
+		if(item.equals(Material.MINECART)||
+				item.equals(Material.STORAGE_MINECART)||
+				item.equals(Material.POWERED_MINECART)||
+				item.equals(Material.BOAT)){
+			return true;
+		}
+		return false;
 	}
 }

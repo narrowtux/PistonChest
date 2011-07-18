@@ -1,5 +1,5 @@
 name: PistonChest
-version: 0.3.1
+version: 0.4.2
 author: narrowtux
 main: com.narrowtux.PistonChest.PCMain
-soft-depend: Lockette
+soft-depend: [Lockette, LWC, NarrowtuxLib]

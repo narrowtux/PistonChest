@@ -93,8 +93,11 @@ public class PCMain extends JavaPlugin {
 			flag = !Lockette.isProtected(chest)&&flag;
 		}
 		if(lwc){
-			Protection prot = LWC.getInstance().findProtection(chest);
-			flag = prot==null&&flag;
+			try{
+				Protection prot = LWC.getInstance().findProtection(chest);
+				flag = prot==null&&flag;
+			} catch(NullPointerException e){
+			}
 		}
 		return flag;
 	}
