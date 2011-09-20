@@ -2,7 +2,8 @@ package com.narrowtux.PistonChest;
 
 import java.io.File;
 
-import com.narrowtux.Utils.FlatFileReader;
+import com.narrowtux.narrowtuxlib.utils.FlatFileReader;
+
 
 public class Configuration {
 	private boolean protectChests = true;
