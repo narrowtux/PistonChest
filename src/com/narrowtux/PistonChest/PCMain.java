@@ -67,7 +67,9 @@ public class PCMain extends JavaPlugin {
 
 	private void registerEvents() {
 		PluginManager pm = getServer().getPluginManager();
-		pm.registerEvent(Type.REDSTONE_CHANGE, blockListener, Priority.Normal, this);
+		//pm.registerEvent(Type.REDSTONE_CHANGE, blockListener, Priority.Normal, this);
+		pm.registerEvent(Type.BLOCK_PISTON_EXTEND, blockListener, Priority.Normal, this);
+		pm.registerEvent(Type.BLOCK_PISTON_RETRACT, blockListener, Priority.Normal, this);
 		pm.registerEvent(Type.PLUGIN_ENABLE, serverListener, Priority.Normal, this);
 		pm.registerEvent(Type.PLUGIN_DISABLE, serverListener, Priority.Normal, this);
 	}

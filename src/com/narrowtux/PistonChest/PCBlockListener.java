@@ -17,6 +17,8 @@ import org.bukkit.entity.Minecart;
 import org.bukkit.entity.PoweredMinecart;
 import org.bukkit.entity.StorageMinecart;
 import org.bukkit.event.block.BlockListener;
+import org.bukkit.event.block.BlockPistonExtendEvent;
+import org.bukkit.event.block.BlockPistonRetractEvent;
 import org.bukkit.event.block.BlockRedstoneEvent;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
@@ -51,7 +53,7 @@ public class PCBlockListener extends BlockListener {
 			} 
 			if(piston.getType().equals(Material.PISTON_STICKY_BASE)){
 				BlockFace face = getPistonFace(piston.getData());
-				Block chest = piston.getFace(face).getFace(face);
+				Block chest = piston.getRelative(face).getRelative(face);
 				if(isAcceptedType(chest.getType())){
 					if(!PCMain.isChestPublic(chest)){
 						continue;
@@ -72,7 +74,7 @@ public class PCBlockListener extends BlockListener {
 						continue;
 					}
 					if(stack.getTypeId()!=0&&stack.getAmount()>0){
-						Location pos = piston.getFace(face).getLocation();
+						Location pos = piston.getRelative(face).getLocation();
 						ItemStack toPull = stack.clone();
 						toPull.setAmount(1);
 						if(pullItem(toPull, pos, face)){
@@ -115,21 +117,21 @@ public class PCBlockListener extends BlockListener {
 				BlockFace.DOWN,
 		};
 		for(BlockFace face:faces){
-			Block piston = event.getBlock().getFace(face);
+			Block piston = event.getBlock().getRelative(face);
 			if(event.getNewCurrent()>0){
 				if(piston.getType().equals(Material.PISTON_BASE)){
 					result.add(piston);
 				}
-				if(piston.getType().toString().contains("DIODE")&&piston.getFace(face).getType().equals(Material.PISTON_BASE)){
-					result.add(piston.getFace(face));
+				if(piston.getType().toString().contains("DIODE")&&piston.getRelative(face).getType().equals(Material.PISTON_BASE)){
+					result.add(piston.getRelative(face));
 				}
 			} else {
 				Block current = null;
 				if(piston.getType().equals(Material.PISTON_STICKY_BASE)){
 					current = piston;
 				}
-				if(piston.getType().toString().contains("DIODE")&&piston.getFace(face).getType().equals(Material.PISTON_STICKY_BASE)){
-					current = piston.getFace(face);
+				if(piston.getType().toString().contains("DIODE")&&piston.getRelative(face).getType().equals(Material.PISTON_STICKY_BASE)){
+					current = piston.getRelative(face);
 				}
 				if(current!=null&&isPistonExtended(current.getData())){
 					result.add(current);
@@ -142,14 +144,18 @@ public class PCBlockListener extends BlockListener {
 	public Block getChestInLine(Block piston) {
 		BlockFace face = getPistonFace(piston.getData());
 		Block chest = piston;
+		boolean wasNotAccepted = false;
 		for(int i = 0;i<12;i++){
-			blockBeforeChest = chest;
-			chest = chest.getFace(face);
+			chest = chest.getRelative(face);
 			if(isNotAcceptedType(chest.getType())){
-				return null;
-			}
-			if(isAcceptedType(chest.getType())){
+				if(wasNotAccepted)
+					return null;
+				else
+					wasNotAccepted = true;
+			} else if(isAcceptedType(chest.getType())){
 				return chest;
+			} else {
+				blockBeforeChest = chest;
 			}
 		}
 		return null;
@@ -315,5 +321,74 @@ public class PCBlockListener extends BlockListener {
 			return true;
 		}
 		return false;
+	}
+
+	@Override
+	public void onBlockPistonExtend(BlockPistonExtendEvent event) {
+		Block piston = event.getBlock();
+		if(!event.isSticky()){
+			Block chest = getChestInLine(piston);
+			if(!PCMain.isChestPublic(chest)){
+				return;
+			}
+			if(chest!=null&&!blockBeforeChest.equals(piston)){
+				ItemStack stack = new ItemStack(blockBeforeChest.getType(), 1, blockBeforeChest.getData());
+				Inventory inv = ((ContainerBlock)chest.getState()).getInventory();
+				if(chest.getType().equals(Material.FURNACE)||chest.getType().equals(Material.BURNING_FURNACE)){
+					if(handleFurnace(inv, stack)){
+						blockBeforeChest.setType(Material.AIR);
+					} else {
+						event.setCancelled(true);
+					}
+				} else {
+					if(handleNormalInventory(inv, stack)){
+						blockBeforeChest.setType(Material.AIR);
+					} else {
+						event.setCancelled(true);
+					}
+				}
+			}
+		}
+	}
+
+	@Override
+	public void onBlockPistonRetract(BlockPistonRetractEvent event) {
+		Block piston = event.getBlock();
+		if(piston.getType().equals(Material.PISTON_STICKY_BASE)){
+			BlockFace face = getPistonFace(piston.getData());
+			Block chest = piston.getRelative(face).getRelative(face);
+			if(isAcceptedType(chest.getType())){
+				if(!PCMain.isChestPublic(chest)){
+					return;
+				}
+				Inventory inv = ((ContainerBlock)chest.getState()).getInventory();
+				ItemStack stack = null;
+				if(chest.getType().equals(Material.CHEST)||chest.getType().equals(Material.DISPENSER)){
+					stack = getFirstItem(inv);
+				}
+				if(isFurnace(chest.getType())){
+					invSlot = 2;
+					stack = inv.getItem(invSlot);
+					if(!stack.getType().isBlock()){
+						stack = null;
+					}
+				}
+				if(stack==null){
+					return;
+				}
+				if(stack.getTypeId()!=0&&stack.getAmount()>0){
+					Location pos = piston.getRelative(face).getLocation();
+					ItemStack toPull = stack.clone();
+					toPull.setAmount(1);
+					if(pullItem(toPull, pos, face)){
+						stack.setAmount(stack.getAmount()-1);
+						if(stack.getAmount()==0){
+							inv.setItem(invSlot, null);
+						}
+					}
+					return;
+				}
+			}
+		}
 	}
 }
